@@ -31,3 +31,28 @@ app.get('/api/quotes', (req, res) => {
   const randomQuote = filtered[Math.floor(Math.random() * filtered.length)];
   res.json(randomQuote || quotes[0]);
 });
+
+// 2. Post a new score
+app.post('/api/scores', (req, res) => {
+  const { username, wpm, accuracy, timeLimit } = req.body;
+  
+  if (!username || typeof wpm !== 'number' || typeof accuracy !== 'number') {
+    return res.status(400).json({ error: 'Invalid score data provided.' });
+  }
+
+  const newScore = {
+    id: scores.length + 1,
+    username: username.trim() || 'Anonymous',
+    wpm,
+    accuracy,
+    timeLimit,
+    date: new Date().toISOString()
+  };
+
+  scores.push(newScore);
+  res.status(201).json({ message: 'Score saved successfully!', score: newScore });
+});
+
+app.listen(PORT, () => {
+  console.log(`Server running on http://localhost:${PORT}`);
+});
