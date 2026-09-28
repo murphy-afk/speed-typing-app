@@ -81,3 +81,71 @@ body {
 .section-desc {
   color: #94a3b8;
 }
+
+.typing-box {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.stats-bar {
+  display: flex;
+  gap: 2rem;
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: #818cf8;
+}
+
+.quote-display {
+  font-size: 1.25rem;
+  font-family: monospace;
+  background-color: #0f172a;
+  padding: 1.5rem;
+  border-radius: 0.75rem;
+  border: 1px solid #334155;
+  line-height: 1.8;
+  cursor: text;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.char-correct {
+  color: #34d399;
+}
+
+.char-incorrect {
+  color: #f87171;
+  background-color: rgba(248, 113, 113, 0.2);
+  text-decoration: underline;
+}
+
+.char-pending {
+  color: #94a3b8;
+}
+
+.hidden-input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.restart-btn {
+  padding: 0.75rem 1.5rem;
+  background-color: #4f46e5;
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  cursor: pointer;
+  align-self: flex-start;
+  transition: background-color 0.2s;
+}
+
+.restart-btn:hover {
+  background-color: #4338ca;
+}
+
+.completion-message {
+  color: #34d399;
+  font-weight: bold;
+}

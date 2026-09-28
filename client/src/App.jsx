@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Trophy, History, Play } from 'lucide-react';
+import TypingTest from './components/TypingTest';
 import './App.css';
 
 export default function App() {
@@ -17,21 +18,17 @@ export default function App() {
       </header>
 
       <main className="main-content">
-        {activeTab === 'play' && (
-          <div>
-            <h2 className="section-title">Typing Test Arena</h2>
-          </div>
-        )}
+        {activeTab === 'play' && <TypingTest />}
         {activeTab === 'leaderboard' && (
           <div>
             <h2 className="section-title">Top High Scores</h2>
-            <p className="section-desc">Leaderboard goes here</p>
+            <p className="section-desc">Leaderboard fetched from Express backend goes here.</p>
           </div>
         )}
         {activeTab === 'history' && (
           <div>
             <h2 className="section-title">Your Past Results</h2>
-            <p className="section-desc">Local history goes here</p>
+            <p className="section-desc">Local history goes here.</p>
           </div>
         )}
       </main>

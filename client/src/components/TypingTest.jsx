@@ -1,0 +1,126 @@
+import React, { useState, useEffect, useRef } from 'react';
+
+export default function TypingTest() {
+  const [quote, setQuote] = useState({ text: 'Loading quote from server...' });
+  const [userInput, setUserInput] = useState('');
+  const [startTime, setStartTime] = useState(null);
+  const [wpm, setWpm] = useState(0);
+  const [accuracy, setAccuracy] = useState(100);
+  const [isFinished, setIsFinished] = useState(false);
+  const [username, setUsername] = useState('Typist');
+
+  const inputRef = useRef(null);
+
+  const fetchQuote = async () => {
+    console.log('Fetching new quote...');
+    try {
+      const response = await fetch('http://localhost:5000/api/quotes');
+      const data = await response.json();
+      setQuote(data);
+      setUserInput('');
+      setStartTime(null);
+      setWpm(0);
+      setAccuracy(100);
+      setIsFinished(false);
+      setTimeout(() => {
+        if (inputRef.current) inputRef.current.focus();
+      }, 50);
+    } catch (error) {
+      console.error('Failed to fetch quote:', error);
+      setQuote({ text: 'Make sure your Express server is running on port 5000!' });
+    }
+  };
+
+  useEffect(() => {
+    fetchQuote();
+  }, []);
+
+  const saveScore = async (finalWpm, finalAccuracy) => {
+    console.log('Saving score...', { finalWpm, finalAccuracy });
+    try {
+      const res = await fetch('http://localhost:5000/api/scores', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username: username.trim() || 'Anonymous',
+          wpm: finalWpm,
+          accuracy: finalAccuracy,
+          timeLimit: 'quote'
+        })
+      });
+      const data = await res.json();
+      console.log('Score saved response:', data);
+    } catch (error) {
+      console.error('Failed to save score to backend:', error);
+    }
+  };
+
+  const handleTyping = (e) => {
+    if (isFinished) return;
+
+    const value = e.target.value;
+
+    if (!startTime && value.length > 0) {
+      setStartTime(Date.now());
+    }
+
+    if (value.length <= quote.text.length) {
+      setUserInput(value);
+
+      if (startTime && value.length > 0) {
+        const timeElapsed = (Date.now() - startTime) / 60000;
+        const wordsTyped = value.trim().split(/\s+/).length;
+        const calculatedWpm = Math.round(wordsTyped / (timeElapsed || 0.001));
+        const currentWpm = calculatedWpm > 0 ? calculatedWpm : 0;
+        setWpm(currentWpm);
+
+        let correctChars = 0;
+        for (let i = 0; i < value.length; i++) {
+          if (value[i] === quote.text[i]) correctChars++;
+        }
+        const calculatedAccuracy = Math.round((correctChars / value.length) * 100);
+        setAccuracy(calculatedAccuracy);
+
+        // Check if test is completed
+        if (value.length === quote.text.length) {
+          setIsFinished(true);
+          saveScore(currentWpm, calculatedAccuracy);
+        }
+      }
+    }
+  };
+
+  return (
+    <div className="typing-box">
+      <div className="stats-bar">
+        <span>WPM: {wpm}</span>
+        <span>Accuracy: {accuracy}%</span>
+        {isFinished && <span className="completion-message">Saved & Completed!</span>}
+      </div>
+
+      <div className="quote-display" onClick={() => inputRef.current?.focus()}>
+        {quote.text.split('').map((char, index) => {
+          let charClass = "char-pending";
+          if (index < userInput.length) {
+            charClass = userInput[index] === char ? "char-correct" : "char-incorrect";
+          }
+          return <span key={index} className={charClass}>{char}</span>;
+        })}
+      </div>
+
+      <input ref={inputRef} type="text" value={userInput} onChange={handleTyping} disabled={isFinished} className="hidden-input" />
+
+      <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+        <input
+          type="text"
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+          placeholder="Your name"
+          style={{ padding: '0.75rem', borderRadius: '0.5rem', background: '#0f172a', border: '1px solid #334155', color: '#f1f5f9' }} />
+        <button onClick={fetchQuote} className="restart-btn">
+          {isFinished ? 'Next Test & Save Score' : 'New Quote / Reset'}
+        </button>
+      </div>
+    </div>
+  );
+}
