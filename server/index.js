@@ -21,7 +21,7 @@ let scores = [];
 
 // ROUTES
 
-// 1. Get a random quote
+// Get a random quote
 app.get('/api/quotes', (req, res) => {
   const { difficulty } = req.query;
   let filtered = quotes;
@@ -32,7 +32,7 @@ app.get('/api/quotes', (req, res) => {
   res.json(randomQuote || quotes[0]);
 });
 
-// 2. Post a new score
+// Post a new score
 app.post('/api/scores', (req, res) => {
   const { username, wpm, accuracy, timeLimit } = req.body;
   
@@ -51,6 +51,15 @@ app.post('/api/scores', (req, res) => {
 
   scores.push(newScore);
   res.status(201).json({ message: 'Score saved successfully!', score: newScore });
+});
+
+// Get leaderboard
+app.get('/api/scores', (req, res) => {
+  const sortedScores = [...scores].sort((a, b) => {
+    if (b.wpm !== a.wpm) return b.wpm - a.wpm;
+    return b.accuracy - a.accuracy;
+  });
+  res.json(sortedScores.slice(0, 10));
 });
 
 app.listen(PORT, () => {
