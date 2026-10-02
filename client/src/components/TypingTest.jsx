@@ -8,11 +8,10 @@ export default function TypingTest() {
   const [accuracy, setAccuracy] = useState(100);
   const [isFinished, setIsFinished] = useState(false);
   const [username, setUsername] = useState('Typist');
-
+  
   const inputRef = useRef(null);
 
   const fetchQuote = async () => {
-    console.log('Fetching new quote...');
     try {
       const response = await fetch('http://localhost:5000/api/quotes');
       const data = await response.json();
@@ -35,10 +34,19 @@ export default function TypingTest() {
     fetchQuote();
   }, []);
 
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Enter' && isFinished) {
+        fetchQuote();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isFinished]);
+
   const saveScore = async (finalWpm, finalAccuracy) => {
-    console.log('Saving score...', { finalWpm, finalAccuracy });
     try {
-      const res = await fetch('http://localhost:5000/api/scores', {
+      await fetch('http://localhost:5000/api/scores', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -48,8 +56,6 @@ export default function TypingTest() {
           timeLimit: 'quote'
         })
       });
-      const data = await res.json();
-      console.log('Score saved response:', data);
     } catch (error) {
       console.error('Failed to save score to backend:', error);
     }
@@ -59,7 +65,7 @@ export default function TypingTest() {
     if (isFinished) return;
 
     const value = e.target.value;
-
+    
     if (!startTime && value.length > 0) {
       setStartTime(Date.now());
     }
@@ -81,7 +87,6 @@ export default function TypingTest() {
         const calculatedAccuracy = Math.round((correctChars / value.length) * 100);
         setAccuracy(calculatedAccuracy);
 
-        // Check if test is completed
         if (value.length === quote.text.length) {
           setIsFinished(true);
           saveScore(currentWpm, calculatedAccuracy);
@@ -95,7 +100,7 @@ export default function TypingTest() {
       <div className="stats-bar">
         <span>WPM: {wpm}</span>
         <span>Accuracy: {accuracy}%</span>
-        {isFinished && <span className="completion-message">Saved & Completed!</span>}
+        {isFinished && <span className="completion-message">Saved & Completed! Press Enter ↵</span>}
       </div>
 
       <div className="quote-display" onClick={() => inputRef.current?.focus()}>
@@ -111,12 +116,7 @@ export default function TypingTest() {
       <input ref={inputRef} type="text" value={userInput} onChange={handleTyping} disabled={isFinished} className="hidden-input" />
 
       <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-        <input
-          type="text"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          placeholder="Your name"
-          style={{ padding: '0.75rem', borderRadius: '0.5rem', background: '#0f172a', border: '1px solid #334155', color: '#f1f5f9' }} />
+        <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} placeholder="Your name" style={{ padding: '0.75rem', borderRadius: '0.5rem', background: '#0f172a', border: '1px solid #334155', color: '#f1f5f9' }} />
         <button onClick={fetchQuote} className="restart-btn">
           {isFinished ? 'Next Test & Save Score' : 'New Quote / Reset'}
         </button>
