@@ -7,13 +7,19 @@ export default function TypingTest() {
   const [wpm, setWpm] = useState(0);
   const [accuracy, setAccuracy] = useState(100);
   const [isFinished, setIsFinished] = useState(false);
-  const [username, setUsername] = useState('Anon');
-  
+  const [username, setUsername] = useState('Anonymous');
+  const [difficulty, setDifficulty] = useState('random');
+
   const inputRef = useRef(null);
 
-  const fetchQuote = async () => {
+  const fetchQuote = async (selectedDifficulty = difficulty) => {
     try {
-      const response = await fetch('http://localhost:5000/api/quotes');
+      let url = 'http://localhost:5000/api/quotes';
+      if (selectedDifficulty !== 'random') {
+        url += `?difficulty=${selectedDifficulty}`;
+      }
+
+      const response = await fetch(url);
       const data = await response.json();
       setQuote(data);
       setUserInput('');
@@ -31,18 +37,25 @@ export default function TypingTest() {
   };
 
   useEffect(() => {
-    fetchQuote();
+    fetchQuote('random');
   }, []);
 
+  const handleDifficultyChange = (e) => {
+    const newDifficulty = e.target.value;
+    setDifficulty(newDifficulty);
+    fetchQuote(newDifficulty);
+  };
+
+  // Listen for the Enter key when the test is finished
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === 'Enter' && isFinished) {
-        fetchQuote();
+        fetchQuote(difficulty);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isFinished]);
+  }, [isFinished, difficulty]);
 
   const saveScore = async (finalWpm, finalAccuracy) => {
     const scoreData = {
@@ -77,7 +90,7 @@ export default function TypingTest() {
     if (isFinished) return;
 
     const value = e.target.value;
-    
+
     if (!startTime && value.length > 0) {
       setStartTime(Date.now());
     }
@@ -112,6 +125,7 @@ export default function TypingTest() {
       <div className="stats-bar">
         <span>WPM: {wpm}</span>
         <span>Accuracy: {accuracy}%</span>
+        {quote.difficulty && <span style={{ color: '#94a3b8', textTransform: 'capitalize' }}>Level: {quote.difficulty}</span>}
         {isFinished && <span className="completion-message">Saved & Completed! Press Enter ↵</span>}
       </div>
 
@@ -127,9 +141,25 @@ export default function TypingTest() {
 
       <input ref={inputRef} type="text" value={userInput} onChange={handleTyping} disabled={isFinished} className="hidden-input" />
 
-      <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-        <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} placeholder="Your name" style={{ padding: '0.75rem', borderRadius: '0.5rem', background: '#0f172a', border: '1px solid #334155', color: '#f1f5f9' }} />
-        <button onClick={fetchQuote} className="restart-btn">
+      <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
+        <input
+          type="text"
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+          placeholder="Your name"
+          style={{ padding: '0.75rem', borderRadius: '0.5rem', background: '#0f172a', border: '1px solid #334155', color: '#f1f5f9' }} />
+
+        <select
+          value={difficulty}
+          onChange={handleDifficultyChange}
+          style={{ padding: '0.75rem', borderRadius: '0.5rem', background: '#0f172a', border: '1px solid #334155', color: '#f1f5f9', cursor: 'pointer' }}>
+          <option value="random">Random Difficulty</option>
+          <option value="easy">Easy</option>
+          <option value="medium">Medium</option>
+          <option value="hard">Hard</option>
+        </select>
+
+        <button onClick={() => fetchQuote(difficulty)} className="restart-btn">
           {isFinished ? 'Next Test & Save Score' : 'New Quote / Reset'}
         </button>
       </div>
