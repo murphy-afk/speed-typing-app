@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const mysql = require('mysql2/promise');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -7,59 +8,59 @@ const PORT = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
-// Temporary data
-// TODO: setup database
-let quotes = [
-  { id: 1, text: "The quick brown fox jumps over the lazy dog.", difficulty: "easy" },
-  { id: 2, text: "Programming is the art of telling another human what one wants the computer to do.", difficulty: "medium" },
-  { id: 3, text: "In order to be irreplaceable, one must always be different.", difficulty: "easy" },
-  { id: 4, text: "Simplicity is prerequisite for reliability. Complex systems tend to fail in complex ways.", difficulty: "hard" },
-  { id: 5, text: "React makes it painless to create interactive UIs. Design simple views for each state in your application.", difficulty: "medium" }
-];
-
-let scores = [];
-
-// ROUTES
-
-// Get a random quote
-app.get('/api/quotes', (req, res) => {
-  const { difficulty } = req.query;
-  let filtered = quotes;
-  if (difficulty) {
-    filtered = quotes.filter(q => q.difficulty === difficulty);
-  }
-  const randomQuote = filtered[Math.floor(Math.random() * filtered.length)];
-  res.json(randomQuote || quotes[0]);
+const pool = mysql.createPool({
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0
 });
 
-// Post a new score
-app.post('/api/scores', (req, res) => {
+// 1. Get a random quote
+app.get('/api/quotes', async (req, res) => {
+  try {
+    const [rows] = await pool.query('SELECT * FROM quotes');
+    const randomQuote = rows[Math.floor(Math.random() * rows.length)];
+    res.json(randomQuote);
+  } catch (error) {
+    console.error('Database error fetching quotes:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// 2. Get leaderboard
+app.get('/api/scores', async (req, res) => {
+  try {
+    const [rows] = await pool.query(
+      'SELECT id, username, wpm, accuracy, time_limit AS timeLimit, created_at AS date FROM scores ORDER BY wpm DESC, accuracy DESC LIMIT 10'
+    );
+    res.json(rows);
+  } catch (error) {
+    console.error('Database error fetching scores:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// 3. Post a new score
+app.post('/api/scores', async (req, res) => {
   const { username, wpm, accuracy, timeLimit } = req.body;
   
-  if (!username || typeof wpm !== 'number' || typeof accuracy !== 'number') {
-    return res.status(400).json({ error: 'Invalid score data provided.' });
+  try {
+    const [result] = await pool.query(
+      'INSERT INTO scores (username, wpm, accuracy, time_limit) VALUES (?, ?, ?, ?)',
+      [username.trim() || 'Anonymous', wpm, accuracy, timeLimit || 'quote']
+    );
+
+    res.status(201).json({ 
+      message: 'Score saved successfully!', 
+      scoreId: result.insertId 
+    });
+  } catch (error) {
+    console.error('Database error saving score:', error);
+    res.status(500).json({ error: 'Internal server error' });
   }
-
-  const newScore = {
-    id: scores.length + 1,
-    username: username.trim() || 'Anonymous',
-    wpm,
-    accuracy,
-    timeLimit,
-    date: new Date().toISOString()
-  };
-
-  scores.push(newScore);
-  res.status(201).json({ message: 'Score saved successfully!', score: newScore });
-});
-
-// Get leaderboard
-app.get('/api/scores', (req, res) => {
-  const sortedScores = [...scores].sort((a, b) => {
-    if (b.wpm !== a.wpm) return b.wpm - a.wpm;
-    return b.accuracy - a.accuracy;
-  });
-  res.json(sortedScores.slice(0, 10));
 });
 
 app.listen(PORT, () => {
