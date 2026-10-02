@@ -7,7 +7,7 @@ export default function TypingTest() {
   const [wpm, setWpm] = useState(0);
   const [accuracy, setAccuracy] = useState(100);
   const [isFinished, setIsFinished] = useState(false);
-  const [username, setUsername] = useState('Typist');
+  const [username, setUsername] = useState('Anon');
   
   const inputRef = useRef(null);
 
@@ -45,16 +45,28 @@ export default function TypingTest() {
   }, [isFinished]);
 
   const saveScore = async (finalWpm, finalAccuracy) => {
+    const scoreData = {
+      username: username.trim() || 'Anonymous',
+      wpm: finalWpm,
+      accuracy: finalAccuracy,
+      timeLimit: 'quote',
+      date: new Date().toISOString()
+    };
+
+    // Save to browser localStorage
+    try {
+      const existingHistory = JSON.parse(localStorage.getItem('typing_history') || '[]');
+      localStorage.setItem('typing_history', JSON.stringify([scoreData, ...existingHistory]));
+    } catch (e) {
+      console.error('Failed to save to localStorage:', e);
+    }
+
+    // Save to db
     try {
       await fetch('http://localhost:5000/api/scores', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          username: username.trim() || 'Anonymous',
-          wpm: finalWpm,
-          accuracy: finalAccuracy,
-          timeLimit: 'quote'
-        })
+        body: JSON.stringify(scoreData)
       });
     } catch (error) {
       console.error('Failed to save score to backend:', error);
