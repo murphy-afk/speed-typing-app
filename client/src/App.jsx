@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Trophy, History, Play } from 'lucide-react';
 import TypingTest from './components/TypingTest';
+import Leaderboard from './components/Leaderboard';
 import './App.css';
 
 export default function App() {
@@ -19,16 +20,11 @@ export default function App() {
 
       <main className="main-content">
         {activeTab === 'play' && <TypingTest />}
-        {activeTab === 'leaderboard' && (
-          <div>
-            <h2 className="section-title">Top High Scores</h2>
-            <p className="section-desc">Leaderboard fetched from Express backend goes here.</p>
-          </div>
-        )}
+        {activeTab === 'leaderboard' && <Leaderboard />}
         {activeTab === 'history' && (
           <div>
             <h2 className="section-title">Your Past Results</h2>
-            <p className="section-desc">Local history goes here.</p>
+            <p className="section-desc">Local history</p>
           </div>
         )}
       </main>
