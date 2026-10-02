@@ -15,10 +15,10 @@ export default function History() {
 
   return (
     <div className="history-container">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-        <h2 className="section-title" style={{ margin: 0 }}>Your Past Results</h2>
+      <div className="history-header">
+        <h2 className="section-title">Your Past Results</h2>
         {history.length > 0 && (
-          <button onClick={clearHistory} style={{ background: '#ef4444', color: 'white', border: 'none', padding: '0.5rem 1rem', borderRadius: '0.5rem', cursor: 'pointer', fontWeight: 600 }}>
+          <button onClick={clearHistory} className="danger-btn">
             Clear History
           </button>
         )}
